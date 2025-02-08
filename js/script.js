@@ -11,7 +11,7 @@ import { fromLonLat } from 'ol/proj';
 import { Style, Icon } from 'ol/style';
 
 // Инициализация карты
-const map = new Map({
+const myMap = new Map({
     target: 'map',
     layers: [
         new TileLayer({
@@ -29,7 +29,7 @@ const vectorSource = new VectorSource();
 const markerLayer = new VectorLayer({
     source: vectorSource,
 });
-map.addLayer(markerLayer);
+myMap.addLayer(markerLayer);
 
 // Загрузка маркеров с сервера
 fetch('/api/markers')

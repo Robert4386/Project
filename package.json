@@ -398,5 +398,11 @@
     "url": "https://github.com/Robert4386/InteractiveMap/issues"
   },
   "homepage": "https://github.com/Robert4386/InteractiveMap#readme",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "css-loader": "^7.1.2",
+    "style-loader": "^4.0.0",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
+  }
 }
