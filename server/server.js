@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
+const path = require('path');
 
 const app = express();
 app.use(express.json());
@@ -16,6 +17,18 @@ let markers = [];
 // Роут для получения данных карты
 app.get('/api/markers', (req, res) => {
     res.json(markers);
+});
+
+// Роут для получения границ Украины
+app.get('/api/borders/ukraine', (req, res) => {
+    const filePath = path.join(__dirname, '../data/ukraine-borders.geojson');
+    res.sendFile(filePath);
+});
+
+// Роут для получения границ новых территорий
+app.get('/api/borders/new-territories', (req, res) => {
+    const filePath = path.join(__dirname, '../data/new-territories.geojson');
+    res.sendFile(filePath);
 });
 
 // Обработка входящих сообщений от Telegram

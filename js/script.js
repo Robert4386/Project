@@ -16,27 +16,66 @@ const map = new ol.Map({
 const vectorSource = new ol.source.Vector();
 const markerLayer = new ol.layer.Vector({
     source: vectorSource,
-    style: new ol.style.Style({
-        image: new ol.style.Circle({
-            radius: 8,
-            fill: new ol.style.Fill({ color: 'blue' }),
-            stroke: new ol.style.Stroke({ color: '#00008B', width: 3 }),
-        }),
-    }),
 });
 map.addLayer(markerLayer);
+
+// Функция для загрузки и отрисовки границ
+function loadGeoJSON(url, color) {
+    fetch(url)
+        .then(response => response.json())
+        .then(geojson => {
+            const format = new ol.format.GeoJSON();
+            const features = format.readFeatures(geojson, {
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857',
+            });
+
+            const boundaryLayer = new ol.layer.Vector({
+                source: new ol.source.Vector({
+                    features: features,
+                }),
+                style: new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: color,
+                        width: 2,
+                    }),
+                    fill: new ol.style.Fill({
+                        color: 'rgba(172, 58, 58, 0.43)', // Прозрачная заливка
+                    }),
+                }),
+            });
+            map.addLayer(boundaryLayer);
+        })
+        .catch(error => console.error('Error loading GeoJSON:', error));
+}
+
+// Загрузка границ Украины
+loadGeoJSON('/api/borders/ukraine', 'blue');
+
+// Загрузка границ новых территорий
+loadGeoJSON('/api/borders/new-territories', 'red');
 
 // Загрузка маркеров с сервера
 fetch('/api/markers')
     .then(response => response.json())
     .then(markers => {
         markers.forEach(marker => {
-            const feature = new ol.Feature({
+            const iconFeature = new ol.Feature({
                 geometry: new ol.geom.Point(ol.proj.fromLonLat(marker.coords)),
                 name: marker.name,
                 link: marker.link,
             });
-            vectorSource.addFeature(feature);
+
+            // Стиль для маркера с пользовательской иконкой
+            const iconStyle = new ol.style.Style({
+                image: new ol.style.Icon({
+                    anchor: [0.5, 1], // Центрирование иконки
+                    src: 'images/marker-icon.png', // Путь к пользовательской иконке
+                }),
+            });
+
+            iconFeature.setStyle(iconStyle);
+            vectorSource.addFeature(iconFeature);
         });
     })
     .catch(error => console.error('Error loading markers:', error));
