@@ -104,4 +104,21 @@ async function getCoordinates(locationName) {
         });
         if (response.data.length > 0) {
             const { lat, lon } = response.data[0];
-            return [parseFloat(lon), parseFloat
+            return [parseFloat(lon), parseFloat(lat)];
+        }
+    } catch (error) {
+        console.error('Error fetching coordinates:', error);
+    }
+    return null;
+}
+
+// Обработка всех остальных запросов (например, корневой путь `/`)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
+});
+
+// Запуск сервера
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
