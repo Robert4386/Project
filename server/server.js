@@ -1,11 +1,25 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
-const path = require('path');
 
 const app = express();
+
+// Middleware для разбора JSON
 app.use(express.json());
+
+// Middleware для установки Content-Security-Policy
+app.use((req, res, next) => {
+    res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self';"
+    );
+    next();
+});
+
+// Служба статических файлов (HTML, CSS, JS, изображения)
+app.use(express.static(path.join(__dirname, '..')));
 
 // Токен вашего Telegram-бота
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -97,6 +111,11 @@ async function getCoordinates(locationName) {
     }
     return null;
 }
+
+// Обработка всех остальных запросов (например, корневой путь `/`)
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
+});
 
 // Запуск сервера
 const PORT = process.env.PORT || 3000;
