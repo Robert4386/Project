@@ -1,3 +1,4 @@
+// Импортируем необходимые модули из OpenLayers
 import 'ol/ol.css';
 import { Map, View } from 'ol';
 import TileLayer from 'ol/layer/Tile';
@@ -18,7 +19,7 @@ const map = new Map({
         }),
     ],
     view: new View({
-        center: fromLonLat([31.1656, 48.3794]),
+        center: fromLonLat([31.1656, 48.3794]), // Центр Украины
         zoom: 6,
     }),
 });
@@ -30,17 +31,27 @@ const markerLayer = new VectorLayer({
 });
 map.addLayer(markerLayer);
 
-// Пример добавления маркера
-const iconFeature = new Feature({
-    geometry: new Point(fromLonLat([30.5234, 50.4501])), // Координаты Киева
-});
+// Загрузка маркеров с сервера
+fetch('/api/markers')
+    .then(response => response.json())
+    .then(markers => {
+        markers.forEach(marker => {
+            const iconFeature = new Feature({
+                geometry: new Point(fromLonLat(marker.coords)),
+                name: marker.name,
+                link: marker.link,
+            });
 
-const iconStyle = new Style({
-    image: new Icon({
-        anchor: [0.5, 1],
-        src: 'images/marker-icon.png', // Путь к пользовательской иконке
-    }),
-});
+            // Стиль для маркера с пользовательской иконкой
+            const iconStyle = new Style({
+                image: new Icon({
+                    anchor: [0.5, 1], // Центрирование иконки
+                    src: 'images/marker-icon.png', // Путь к пользовательской иконке
+                }),
+            });
 
-iconFeature.setStyle(iconStyle);
-vectorSource.addFeature(iconFeature);
+            iconFeature.setStyle(iconStyle);
+            vectorSource.addFeature(iconFeature);
+        });
+    })
+    .catch(error => console.error('Error loading markers:', error));

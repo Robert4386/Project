@@ -10,13 +10,13 @@
     <link rel="stylesheet" href="css/styles.css">
 
     <!-- Настройка Content-Security-Policy -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://tile.openstreetmap.org;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://tile.openstreetmap.org; script-src 'self'; style-src 'self';">
 </head>
 <body>
     <!-- Контейнер для карты -->
     <div id="map"></div>
 
-    <!-- Подключение скриптов -->
-    <script src="js/script.js"></script>
+    <!-- Подключение скрипта как модуля -->
+    <script type="module" src="js/script.js"></script>
 </body>
 </html>
