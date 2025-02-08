@@ -13,7 +13,7 @@ app.use(express.json());
 app.use((req, res, next) => {
     res.setHeader(
         'Content-Security-Policy',
-        "default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self';"
+        "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net;"
     );
     next();
 });

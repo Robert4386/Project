@@ -40,7 +40,7 @@ function loadGeoJSON(url, color) {
                         width: 2,
                     }),
                     fill: new ol.style.Fill({
-                        color: 'rgba(172, 58, 58, 0.43)', // Прозрачная заливка
+                        color: 'rgba(0, 0, 0, 0)', // Прозрачная заливка
                     }),
                 }),
             });
