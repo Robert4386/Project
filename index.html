@@ -4,10 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Map of Ukraine</title>
+
+    <!-- Подключение стилей -->
+    <link rel="stylesheet" href="/node_modules/ol/ol.css">
     <link rel="stylesheet" href="css/styles.css">
+
+    <!-- Настройка Content-Security-Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://tile.openstreetmap.org; script-src 'self'; style-src 'self';">
 </head>
 <body>
+    <!-- Контейнер для карты -->
     <div id="map"></div>
-    <script src="dist/bundle.js"></script>
+
+    <!-- Подключение скриптов -->
+    <script src="/dist/bundle.js"></script>
 </body>
 </html>
