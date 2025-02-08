@@ -1,81 +1,46 @@
+import 'ol/ol.css';
+import { Map, View } from 'ol';
+import TileLayer from 'ol/layer/Tile';
+import OSM from 'ol/source/OSM';
+import VectorSource from 'ol/source/Vector';
+import VectorLayer from 'ol/layer/Vector';
+import Feature from 'ol/Feature';
+import Point from 'ol/geom/Point';
+import { fromLonLat } from 'ol/proj';
+import { Style, Icon } from 'ol/style';
+
 // Инициализация карты
-const map = new ol.Map({
+const map = new Map({
     target: 'map',
     layers: [
-        new ol.layer.Tile({
-            source: new ol.source.OSM(),
+        new TileLayer({
+            source: new OSM(),
         }),
     ],
-    view: new ol.View({
-        center: ol.proj.fromLonLat([31.1656, 48.3794]),
+    view: new View({
+        center: fromLonLat([31.1656, 48.3794]),
         zoom: 6,
     }),
 });
 
 // Источник для маркеров
-const vectorSource = new ol.source.Vector();
-const markerLayer = new ol.layer.Vector({
+const vectorSource = new VectorSource();
+const markerLayer = new VectorLayer({
     source: vectorSource,
 });
 map.addLayer(markerLayer);
 
-// Функция для загрузки и отрисовки границ
-function loadGeoJSON(url, color) {
-    fetch(url)
-        .then(response => response.json())
-        .then(geojson => {
-            const format = new ol.format.GeoJSON();
-            const features = format.readFeatures(geojson, {
-                dataProjection: 'EPSG:4326',
-                featureProjection: 'EPSG:3857',
-            });
+// Пример добавления маркера
+const iconFeature = new Feature({
+    geometry: new Point(fromLonLat([30.5234, 50.4501])), // Координаты Киева
+});
 
-            const boundaryLayer = new ol.layer.Vector({
-                source: new ol.source.Vector({
-                    features: features,
-                }),
-                style: new ol.style.Style({
-                    stroke: new ol.style.Stroke({
-                        color: color,
-                        width: 2,
-                    }),
-                    fill: new ol.style.Fill({
-                        color: 'rgba(0, 0, 0, 0)', // Прозрачная заливка
-                    }),
-                }),
-            });
-            map.addLayer(boundaryLayer);
-        })
-        .catch(error => console.error('Error loading GeoJSON:', error));
-}
+const iconStyle = new Style({
+    image: new Icon({
+        anchor: [0.5, 1],
+        src: 'images/marker-icon.png', // Путь к пользовательской иконке
+    }),
+});
 
-// Загрузка границ Украины
-loadGeoJSON('/api/borders/ukraine', 'blue');
-
-// Загрузка границ новых территорий
-loadGeoJSON('/api/borders/new-territories', 'red');
-
-// Загрузка маркеров с сервера
-fetch('/api/markers')
-    .then(response => response.json())
-    .then(markers => {
-        markers.forEach(marker => {
-            const iconFeature = new ol.Feature({
-                geometry: new ol.geom.Point(ol.proj.fromLonLat(marker.coords)),
-                name: marker.name,
-                link: marker.link,
-            });
-
-            // Стиль для маркера с пользовательской иконкой
-            const iconStyle = new ol.style.Style({
-                image: new ol.style.Icon({
-                    anchor: [0.5, 1], // Центрирование иконки
-                    src: 'images/marker-icon.png', // Путь к пользовательской иконке
-                }),
-            });
-
-            iconFeature.setStyle(iconStyle);
-            vectorSource.addFeature(iconFeature);
-        });
-    })
-    .catch(error => console.error('Error loading markers:', error));
+iconFeature.setStyle(iconStyle);
+vectorSource.addFeature(iconFeature);

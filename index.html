@@ -5,19 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interactive Map of Ukraine</title>
 
-    <!-- Подключение стилей -->
+    <!-- Подключение локальных стилей -->
+    <link rel="stylesheet" href="/node_modules/ol/ol.css">
     <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.css">
 
-    <!-- Настройка Content-Security-Policy для загрузки ресурсов -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net;">
+    <!-- Настройка Content-Security-Policy -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://tile.openstreetmap.org;">
 </head>
 <body>
     <!-- Контейнер для карты -->
     <div id="map"></div>
 
-    <!-- Подключение скриптов -->
-    <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
-    <script src="js/script.js"></script>
+    <!-- Подключение локального скрипта OpenLayers -->
+    <script type="module" src="js/script.js"></script>
 </body>
 </html>

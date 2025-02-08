@@ -268,6 +268,7 @@
     "object-assign": "^4.1.1",
     "object-hash": "^3.0.0",
     "object-inspect": "^1.13.4",
+    "ol": "^10.4.0",
     "on-finished": "^2.4.1",
     "once": "^1.4.0",
     "onetime": "^5.1.2",
