@@ -7,7 +7,7 @@ import VectorSource from 'ol/source/Vector';
 import { Feature } from 'ol';
 import Point from 'ol/geom/Point';
 import { fromLonLat } from 'ol/proj';
-import { Style, Icon } from 'ol/style';
+import { Style, Icon, Stroke, Fill } from 'ol/style';
 import GeoJSON from 'ol/format/GeoJSON';
 
 // Инициализация карты
@@ -80,7 +80,7 @@ fetch('/data/ukraine-borders.geojson')
         const ukraineLayer = new VectorLayer({
             source: new VectorSource({
                 features: new GeoJSON().readFeatures(data, {
-                    featureProjection: 'EPSG:4326', // Преобразование координат
+                    featureProjection: 'EPSG:3857', // Преобразование координат
                 }),
             }),
             style: ukraineStyle,
@@ -96,7 +96,7 @@ fetch('/data/new-territories.geojson')
         const territoriesLayer = new VectorLayer({
             source: new VectorSource({
                 features: new GeoJSON().readFeatures(data, {
-                    featureProjection: 'EPSG:4326', // Преобразование координат
+                    featureProjection: 'EPSG:3857', // Преобразование координат
                 }),
             }),
             style: territoriesStyle,
