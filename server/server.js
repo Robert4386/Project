@@ -15,13 +15,14 @@ app.use((req, res, next) => {
         "default-src 'self'; " +
         "img-src 'self' https://tile.openstreetmap.org; " + // Разрешаем тайлы OpenStreetMap
         "script-src 'self'; " +
-        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;" // Разрешаем стили с CDN
+        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;" + // Разрешаем стили с CDN
+        "connect-src 'self' https://nominatim.openstreetmap.org;" // Разрешаем запросы к Nominatim API
     );
     next();
 });
 
 // Служба статических файлов
-app.use(express.static(path.join(__dirname, '../dist')));
+app.use(express.static(path.join(__dirname, '../')));
 
 // Токен вашего Telegram-бота
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
