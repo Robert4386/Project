@@ -35,7 +35,7 @@ function addMarkerToMap(map, coordinates, name) {
         image: new Icon({
             anchor: [0.5, 1], // Центрирование иконки
             src: '/images/marker-icon.png', // Путь к иконке маркера
-            scale: 0.5, // Масштаб иконки
+            scale: 0.15, // Масштаб иконки
         }),
     });
 
@@ -51,28 +51,59 @@ function addMarkerToMap(map, coordinates, name) {
     map.addLayer(vectorLayer);
 }
 
-// Загрузка границ
-fetch('/data/ukraine-borders.geojson') // Используем существующий файл
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
+// Стиль для границ Украины
+const ukraineStyle = new Style({
+    stroke: new Stroke({
+        color: 'red',
+        width: 3,
+    }),
+    fill: new Fill({
+        color: 'rgba(255, 0, 0, 0.3)', // Полупрозрачная красная заливка
+    }),
+});
+
+// Стиль для новых территорий
+const territoriesStyle = new Style({
+    stroke: new Stroke({
+        color: 'blue',
+        width: 3,
+    }),
+    fill: new Fill({
+        color: 'rgba(0, 0, 255, 0.3)', // Полупрозрачная синяя заливка
+    }),
+});
+
+// Загрузка границ Украины
+fetch('/data/ukraine-borders.geojson')
+    .then(response => response.json())
     .then(data => {
-        const vectorSource = new VectorSource({
-            features: new GeoJSON().readFeatures(data),
+        const ukraineLayer = new VectorLayer({
+            source: new VectorSource({
+                features: new GeoJSON().readFeatures(data, {
+                    featureProjection: 'EPSG:4326', // Преобразование координат
+                }),
+            }),
+            style: ukraineStyle,
         });
-
-        const vectorLayer = new VectorLayer({
-            source: vectorSource,
-        });
-
-        myMap.addLayer(vectorLayer);
+        myMap.addLayer(ukraineLayer); // Добавляем слой поверх базового
     })
-    .catch(error => {
-        console.error('Error loading borders:', error);
-    });
+    .catch(error => console.error('Error loading Ukraine borders:', error));
+
+// Загрузка границ новых территорий
+fetch('/data/new-territories.geojson')
+    .then(response => response.json())
+    .then(data => {
+        const territoriesLayer = new VectorLayer({
+            source: new VectorSource({
+                features: new GeoJSON().readFeatures(data, {
+                    featureProjection: 'EPSG:4326', // Преобразование координат
+                }),
+            }),
+            style: territoriesStyle,
+        });
+        myMap.addLayer(territoriesLayer); // Добавляем слой поверх базового
+    })
+    .catch(error => console.error('Error loading new territories borders:', error));
 
 // Подключение к WebSocket для получения новых маркеров
 const socket = new WebSocket('ws://localhost:8080');
