@@ -36,7 +36,7 @@ function addMarkerToMap(map, markerData) {
 
     const markerStyle = new Style({
         image: new Icon({
-            anchor: [0.5, 1], // Центрирование иконки
+            anchor: [0.5, 0.5], // Центр иконки совпадает с точкой координат
             src: '/images/marker-icon.png', // Путь к иконке маркера
             scale: 0.15, // Масштаб иконки
         }),
@@ -56,8 +56,9 @@ function addMarkerToMap(map, markerData) {
     // Добавляем обработчик клика на маркер
     map.on('click', (event) => {
         map.forEachFeatureAtPixel(event.pixel, (feature) => {
-            const featureLink = feature.get('link');
+            const featureLink = feature.get('link'); // Получаем ссылку из данных маркера
             if (featureLink) {
+                console.log('Opening link:', featureLink); // Логируем ссылку для отладки
                 window.open(featureLink, '_blank'); // Открываем ссылку в новой вкладке
             }
         });
