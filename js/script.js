@@ -4,11 +4,11 @@ import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
-import GeoJSON from 'ol/format/GeoJSON';
-import { Style, Fill, Stroke, Icon } from 'ol/style';
-import Feature from 'ol/Feature';
+import { Feature } from 'ol';
 import Point from 'ol/geom/Point';
 import { fromLonLat } from 'ol/proj';
+import { Style, Icon } from 'ol/style';
+import GeoJSON from 'ol/format/GeoJSON';
 
 // Инициализация карты
 const myMap = new Map({
@@ -24,69 +24,68 @@ const myMap = new Map({
     }),
 });
 
-// Функция для создания векторного слоя из GeoJSON с пользовательским стилем
-function addGeoJSONLayer(url, strokeColor, fillColor) {
-    const vectorSource = new VectorSource({
-        url: url,
-        format: new GeoJSON(),
+// Функция для добавления маркера на карту
+function addMarkerToMap(map, coordinates, name) {
+    const markerFeature = new Feature({
+        geometry: new Point(fromLonLat(coordinates)), // Преобразование координат в проекцию EPSG:3857
+        name: name,
     });
 
-    const vectorLayer = new VectorLayer({
-        source: vectorSource,
-        style: new Style({
-            stroke: new Stroke({
-                color: strokeColor, // Цвет границы
-                width: 3, // Толщина линии
-            }),
-            fill: new Fill({
-                color: fillColor, // Цвет заливки
-            }),
+    const markerStyle = new Style({
+        image: new Icon({
+            anchor: [0.5, 1], // Центрирование иконки
+            src: '/images/marker-icon.png', // Путь к иконке маркера
+            scale: 0.5, // Масштаб иконки
         }),
     });
 
-    myMap.addLayer(vectorLayer);
-}
+    markerFeature.setStyle(markerStyle);
 
-// Добавляем границы Украины (темно-красные границы)
-addGeoJSONLayer(
-    '/data/ukraine-borders.geojson',
-    '#8B0000', // Темно-красный цвет границ
-    'rgba(255, 0, 0, 0.3)' // Полупрозрачная красная заливка
-);
-
-// Добавляем границы новых территорий РФ (темно-синие границы)
-addGeoJSONLayer(
-    '/data/new-territories.geojson',
-    '#00008B', // Темно-синий цвет границ
-    'rgba(0, 0, 255, 0.3)' // Полупрозрачная синяя заливка
-);
-
-// Функция для добавления маркеров на карту
-function addMarkersToMap(markers) {
     const vectorSource = new VectorSource();
+    vectorSource.addFeature(markerFeature);
 
-    markers.forEach(marker => {
-        const iconFeature = new Feature({
-            geometry: new Point(fromLonLat(marker.coords)),
-            name: marker.name,
-            link: marker.link,
-        });
-
-        const iconStyle = new Style({
-            image: new Icon({
-                anchor: [0.5, 0.5],
-                src: 'images/marker-icon.png', // Путь к иконке маркера
-                scale: 0.5, // Уменьшаем размер иконки
-            }),
-        });
-
-        iconFeature.setStyle(iconStyle);
-        vectorSource.addFeature(iconFeature);
-    });
-
-    const markerLayer = new VectorLayer({
+    const vectorLayer = new VectorLayer({
         source: vectorSource,
     });
 
-    myMap.addLayer(markerLayer);
+    map.addLayer(vectorLayer);
 }
+
+// Загрузка границ
+fetch('/data/ukraine-borders.geojson') // Используем существующий файл
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        const vectorSource = new VectorSource({
+            features: new GeoJSON().readFeatures(data),
+        });
+
+        const vectorLayer = new VectorLayer({
+            source: vectorSource,
+        });
+
+        myMap.addLayer(vectorLayer);
+    })
+    .catch(error => {
+        console.error('Error loading borders:', error);
+    });
+
+// Подключение к WebSocket для получения новых маркеров
+const socket = new WebSocket('ws://localhost:8080');
+
+socket.onopen = () => {
+    console.log('WebSocket connection established');
+};
+
+socket.onmessage = (event) => {
+    const marker = JSON.parse(event.data);
+    addMarkerToMap(myMap, marker.coords, marker.name);
+};
+
+socket.onerror = (error) => {
+    console.error('WebSocket error:', error);
+};

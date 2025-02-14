@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const TelegramBot = require('node-telegram-bot-api');
+const WebSocket = require('ws');
 
 const app = express();
 
@@ -16,7 +17,7 @@ app.use((req, res, next) => {
         "img-src 'self' https://tile.openstreetmap.org; " + // Разрешаем тайлы OpenStreetMap
         "script-src 'self'; " +
         "style-src 'self' 'unsafe-inline'; " + // Разрешаем локальные стили
-        "connect-src 'self' https://nominatim.openstreetmap.org;" // Разрешаем запросы к Nominatim API
+        "connect-src 'self' https://nominatim.openstreetmap.org ws://localhost:8080;" // Разрешаем WebSocket
     );
     next();
 });
@@ -40,6 +41,25 @@ const userStates = {};
 
 // Хранилище маркеров
 let markers = [];
+
+// WebSocket-сервер
+const wss = new WebSocket.Server({ port: 8080 });
+
+wss.on('connection', (ws) => {
+    console.log('WebSocket client connected');
+
+    ws.on('close', () => {
+        console.log('WebSocket client disconnected');
+    });
+});
+
+function broadcastMarker(wsServer, marker) {
+    wsServer.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify(marker));
+        }
+    });
+}
 
 // Обработка команды /start
 bot.onText(/\/start/, (msg) => {
@@ -97,10 +117,10 @@ bot.on('message', async (msg) => {
         const marker = {
             name: locationName,
             coords: coordinates,
-            link: userState.postText.includes('https://') ? extractLink(userState.postText) : null,
         };
 
         markers.push(marker);
+        broadcastMarker(wss, marker);
 
         // Отправляем подтверждение
         bot.sendMessage(chatId, `Маркер успешно добавлен: ${locationName} (${coordinates})`);
