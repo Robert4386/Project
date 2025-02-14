@@ -25,15 +25,18 @@ const myMap = new Map({
 });
 
 // Функция для добавления маркера на карту
-function addMarkerToMap(map, coordinates, name) {
+function addMarkerToMap(map, markerData) {
+    const { coords, name, link } = markerData;
+
     const markerFeature = new Feature({
-        geometry: new Point(fromLonLat(coordinates)), // Преобразование координат в проекцию EPSG:3857
+        geometry: new Point(fromLonLat(coords)), // Преобразование координат в проекцию EPSG:3857
         name: name,
+        link: link, // Сохраняем ссылку в данных маркера
     });
 
     const markerStyle = new Style({
         image: new Icon({
-            anchor: [0.5, 0.5], // Центрирование иконки
+            anchor: [0.5, 1], // Центрирование иконки
             src: '/images/marker-icon.png', // Путь к иконке маркера
             scale: 0.15, // Масштаб иконки
         }),
@@ -49,6 +52,16 @@ function addMarkerToMap(map, coordinates, name) {
     });
 
     map.addLayer(vectorLayer);
+
+    // Добавляем обработчик клика на маркер
+    map.on('click', (event) => {
+        map.forEachFeatureAtPixel(event.pixel, (feature) => {
+            const featureLink = feature.get('link');
+            if (featureLink) {
+                window.open(featureLink, '_blank'); // Открываем ссылку в новой вкладке
+            }
+        });
+    });
 }
 
 // Стиль для границ Украины
@@ -114,7 +127,7 @@ socket.onopen = () => {
 
 socket.onmessage = (event) => {
     const marker = JSON.parse(event.data);
-    addMarkerToMap(myMap, marker.coords, marker.name);
+    addMarkerToMap(myMap, marker);
 };
 
 socket.onerror = (error) => {

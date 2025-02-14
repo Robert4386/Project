@@ -92,8 +92,9 @@ bot.on('message', async (msg) => {
             return;
         }
 
-        // Сохраняем текст поста
+        // Извлекаем текст и ссылку из пересланного поста
         userState.postText = msg.text || 'Без текста';
+        userState.postLink = extractLink(msg); // Извлекаем ссылку
         userState.state = 'WAITING_FOR_LOCATION';
 
         // Запрашиваем название населенного пункта
@@ -117,6 +118,7 @@ bot.on('message', async (msg) => {
         const marker = {
             name: locationName,
             coords: coordinates,
+            link: userState.postLink, // Добавляем ссылку
         };
 
         markers.push(marker);
@@ -145,9 +147,16 @@ function extractLocation(text) {
 }
 
 // Функция для извлечения ссылки
-function extractLink(text) {
-    const match = text.match(/https?:\/\/[^\s]+/);
-    return match ? match[0] : null;
+function extractLink(msg) {
+    const entities = msg.entities || [];
+    for (const entity of entities) {
+        if (entity.type === 'url') {
+            const start = entity.offset;
+            const end = start + entity.length;
+            return msg.text.slice(start, end);
+        }
+    }
+    return null;
 }
 
 // Функция для получения координат через Nominatim API
