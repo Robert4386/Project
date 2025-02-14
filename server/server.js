@@ -15,7 +15,7 @@ app.use((req, res, next) => {
         "default-src 'self'; " +
         "img-src 'self' https://tile.openstreetmap.org; " + // Разрешаем тайлы OpenStreetMap
         "script-src 'self'; " +
-        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;" + // Разрешаем стили с CDN
+        "style-src 'self' 'unsafe-inline'; " + // Разрешаем локальные стили
         "connect-src 'self' https://nominatim.openstreetmap.org;" // Разрешаем запросы к Nominatim API
     );
     next();
