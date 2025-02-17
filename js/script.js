@@ -65,6 +65,8 @@ function addMarkerToMap(map, markerData) {
     });
 }
 
+//*************************************************************************************************************************
+
 // Стиль для границ Украины
 const ukraineStyle = new Style({
     stroke: new Stroke({
@@ -76,16 +78,62 @@ const ukraineStyle = new Style({
     }),
 });
 
-// Стиль для новых территорий
+// Стиль для новых территорий РФ
 const territoriesStyle = new Style({
     stroke: new Stroke({
-        color: 'blue',
+        color: 'darkblue',
         width: 3,
     }),
     fill: new Fill({
-        color: 'rgba(0, 0, 255, 0.3)', // Полупрозрачная синяя заливка
+        color: 'rgba(187, 0, 255, 0.3)', // Полупрозрачная синяя заливка
     }),
 });
+
+// Стиль для территорий РФ (краснодарский край и крым)
+const ugfedokrugStyle = new Style({
+    stroke: new Stroke({
+        color: 'darkblue',
+        width: 3,
+    }),
+    fill: new Fill({
+        color: 'rgba(11, 27, 253, 0.27)', // Желтая заливка
+    }),
+});
+
+// Стиль для западных территорий
+const zapadStyle = new Style({
+    stroke: new Stroke({
+        color: 'red',
+        width: 3,
+    }),
+    fill: new Fill({
+        color: 'rgba(238, 167, 3, 0.38)', // заливка
+    }),
+});
+
+// Стиль для польши
+const polandStyle = new Style({
+    stroke: new Stroke({
+        color: 'red',
+        width: 3,
+    }),
+    fill: new Fill({
+        color: 'rgba(238, 167, 3, 0.38)', // заливка
+    }),
+});
+
+// Стиль для приднестровья
+const prdnstrStyle = new Style({
+    stroke: new Stroke({
+        color: 'red',
+        width: 3,
+    }),
+    fill: new Fill({
+        color: 'rgba(238, 167, 3, 0.55)', // заливка
+    }),
+});
+
+// *****************************************************************************************************************
 
 // Загрузка границ Украины
 fetch('/data/ukraine-borders.geojson')
@@ -97,13 +145,13 @@ fetch('/data/ukraine-borders.geojson')
                     featureProjection: 'EPSG:3857', // Преобразование координат
                 }),
             }),
-            style: ukraineStyle,
+            style: ukraineStyle, // Используем стиль для Украины
         });
         myMap.addLayer(ukraineLayer); // Добавляем слой поверх базового
     })
-    .catch(error => console.error('Error loading Ukraine borders:', error));
+    .catch(error => console.error('Error loading Ukraine borders:', error.message));
 
-// Загрузка границ новых территорий
+// Загрузка границ новых территорий РФ
 fetch('/data/new-territories.geojson')
     .then(response => response.json())
     .then(data => {
@@ -117,7 +165,73 @@ fetch('/data/new-territories.geojson')
         });
         myMap.addLayer(territoriesLayer); // Добавляем слой поверх базового
     })
-    .catch(error => console.error('Error loading new territories borders:', error));
+    .catch(error => console.error('Error loading new territories borders:', error.message));
+
+// Загрузка южного фед округа
+fetch('/data/ugfedokrug.geojson')
+    .then(response => response.json())
+    .then(data => {
+        const ugfedokrugLayer = new VectorLayer({
+            source: new VectorSource({
+                features: new GeoJSON().readFeatures(data, {
+                    featureProjection: 'EPSG:3857', // Преобразование координат
+                }),
+            }),
+            style: ugfedokrugStyle,
+        });
+        myMap.addLayer(ugfedokrugLayer); // Добавляем слой поверх базового
+    })
+    .catch(error => console.error('Error loading krasrndcrimea borders:', error.message));
+
+// Загрузка западных территорий
+fetch('/data/zapad.geojson')
+    .then(response => response.json())
+    .then(data => {
+        const zapadLayer = new VectorLayer({
+            source: new VectorSource({
+                features: new GeoJSON().readFeatures(data, {
+                    featureProjection: 'EPSG:3857', // Преобразование координат
+                }),
+            }),
+            style: zapadStyle,
+        });
+        myMap.addLayer(zapadLayer); // Добавляем слой поверх базового
+    })
+    .catch(error => console.error('Error loading zapad borders:', error.message));
+
+// Загрузка границ польши
+fetch('/data/poland.geojson')
+    .then(response => response.json())
+    .then(data => {
+        const polandLayer = new VectorLayer({
+            source: new VectorSource({
+                features: new GeoJSON().readFeatures(data, {
+                    featureProjection: 'EPSG:3857', // Преобразование координат
+                }),
+            }),
+            style: polandStyle,
+        });
+        myMap.addLayer(polandLayer); // Добавляем слой поверх базового
+    })
+    .catch(error => console.error('Error loading zapad borders:', error.message));
+
+    // Загрузка границ польши
+fetch('/data/prdnstr.geojson')
+.then(response => response.json())
+.then(data => {
+    const prdnstrLayer = new VectorLayer({
+        source: new VectorSource({
+            features: new GeoJSON().readFeatures(data, {
+                featureProjection: 'EPSG:3857', // Преобразование координат
+            }),
+        }),
+        style: prdnstrStyle,
+    });
+    myMap.addLayer(prdnstrLayer); // Добавляем слой поверх базового
+})
+.catch(error => console.error('Error loading zapad borders:', error.message));
+
+//*********************************************************************************************************************************
 
 // Подключение к WebSocket для получения новых маркеров
 const socket = new WebSocket('ws://localhost:8080');
