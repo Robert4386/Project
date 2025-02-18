@@ -54,7 +54,6 @@ myMap.on('click', function (event) {
     }
 });
 
-
 // Функция для добавления маркера на карту
 const markerSource = new VectorSource(); // Общий источник маркеров
 const markerLayer = new VectorLayer({
@@ -99,7 +98,6 @@ function addMarkerToMap(markerData) {
     markerFeature.setStyle(markerStyle);
     markerSource.addFeature(markerFeature);
 }
-
 
 // *****************************************************************************************************************
 
@@ -296,27 +294,40 @@ socket.onerror = (error) => {
 
 // Функция для обновления карты с новыми маркерами
 function updateMap(markers) {
-    // Очищаем карту перед обновлением
-    map.eachLayer(function (layer) {
-        if (layer instanceof L.Marker) {
-            map.removeLayer(layer);
-        }
-    });
+    // Очищаем все маркеры на карте
+    markerSource.clear();
 
-    // Добавляем маркеры на карту
+    // Добавляем новые маркеры
     markers.forEach(marker => {
-        L.marker([marker.coords[1], marker.coords[0]])
-            .addTo(map)
-            .bindPopup(`<a href="${marker.link}" target="_blank">Посмотреть пост</a>`);
+        const markerFeature = new Feature({
+            geometry: new Point(fromLonLat(marker.coords)),
+            name: marker.name,
+        });
+
+        markerFeature.set('link', marker.link);  // Привязываем ссылку к маркеру
+        markerFeature.set('type', 'marker');  // Устанавливаем тип
+
+        const markerStyle = new Style({
+            image: new Icon({
+                anchor: [0.5, 0.5],
+                src: '/images/marker-icon.png',
+                scale: 0.15,
+            }),
+        });
+
+        markerFeature.setStyle(markerStyle);
+        markerSource.addFeature(markerFeature);
     });
 }
 
 // Функция для удаления маркера с карты
 function removeMarkerFromMap(coordinates) {
-    // Найдем маркер по координатам и удалим
-    const markerToRemove = markers.find(marker => marker.coords[0] === coordinates[0] && marker.coords[1] === coordinates[1]);
-    if (markerToRemove) {
-        markers = markers.filter(marker => marker !== markerToRemove);
-        updateMap(markers); // Перерисовываем карту после удаления маркера
+    const featureToRemove = markerSource.getFeatures().find(feature => {
+        const coords = feature.getGeometry().getCoordinates();
+        return coords[0] === fromLonLat(coordinates)[0] && coords[1] === fromLonLat(coordinates)[1];
+    });
+
+    if (featureToRemove) {
+        markerSource.removeFeature(featureToRemove);  // Удаляем маркер
     }
 }
