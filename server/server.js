@@ -92,7 +92,7 @@ bot.on('message', async (msg) => {
     const userState = userStates[chatId];
 
     if (!userState) {
-        bot.sendMessage(chatId, 'Начните с команды /start.');
+        bot.sendMessage(chatId, 'Доступные команды: \n/start \n/markers');
         return;
     }
 

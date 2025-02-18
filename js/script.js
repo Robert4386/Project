@@ -24,6 +24,22 @@ const myMap = new Map({
     }),
 });
 
+// Добавляем обработчик событий для изменения курсора
+myMap.on('pointermove', function (event) {
+    const pixel = myMap.getEventPixel(event.originalEvent);
+    const feature = myMap.forEachFeatureAtPixel(pixel, function (feature) {
+        return feature;
+    });
+
+    if (feature && feature.get('type') === 'marker') {
+        // Меняем курсор на "рука с пальцем" при наведении на маркер
+        myMap.getTargetElement().style.cursor = 'pointer';
+    } else {
+        // Восстанавливаем обычный курсор, если не над маркером
+        myMap.getTargetElement().style.cursor = '';
+    }
+});
+
 // Добавляем обработчик клика на карту
 myMap.on('click', function (event) {
     let clickedMarker = null;
