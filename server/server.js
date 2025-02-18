@@ -61,6 +61,18 @@ function broadcastMarker(wsServer, marker) {
     });
 }
 
+function removeMarkerFromMap(markerId) {
+    // Удаляем маркер по его ID
+    markers = markers.filter(marker => marker.id !== markerId);
+
+    // Оповещаем всех WebSocket-клиентов об удалении маркера
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({ action: 'remove', markerId }));
+        }
+    });
+}
+
 // Обработка команды /start
 bot.onText(/\/start/, (msg) => {
     const chatId = msg.chat.id;
@@ -116,6 +128,7 @@ bot.on('message', async (msg) => {
         }
 
         const marker = {
+            id: markers.length + 1,  // Уникальный ID маркера
             name: locationName,
             coords: coordinates,
             link: userState.postLink, // Добавляем ссылку
@@ -130,6 +143,96 @@ bot.on('message', async (msg) => {
         delete userStates[chatId];
     }
 });
+
+
+
+/****************************************************************************************************************************** */
+
+// Обработка команды /markers
+bot.onText(/\/markers/, (msg) => {
+    const chatId = msg.chat.id;
+    
+    // Если нет маркеров, отправляем сообщение
+    if (markers.length === 0) {
+        bot.sendMessage(chatId, 'Нет доступных маркеров для удаления.');
+        return;
+    }
+
+    // Создаем клавиатуру с кнопками для каждого маркера
+    const keyboard = {
+        reply_markup: {
+            inline_keyboard: markers.map((marker, index) => [
+                {
+                    text: `Удалить маркер ${index + 1} - ${marker.name}`,
+                    callback_data: `delete_marker_${index}`
+                }
+            ])
+        }
+    };
+
+    bot.sendMessage(chatId, 'Выберите маркер для удаления:', keyboard);
+});
+
+// Обработка callback_query для удаления маркера
+bot.on('callback_query', (callbackQuery) => {
+    const chatId = callbackQuery.message.chat.id;
+    const markerIndex = parseInt(callbackQuery.data.split('_')[2], 10);
+
+    // Проверка, существует ли маркер с таким индексом
+    const deletedMarker = markers[markerIndex];
+    if (deletedMarker) {
+        // Удаляем маркер из массива
+        markers.splice(markerIndex, 1);
+
+        // Отправляем сообщение об удалении
+        bot.answerCallbackQuery(callbackQuery.id, { text: `Маркер "${deletedMarker.name}" удален` });
+
+        // Обновляем клавиатуру
+        const keyboard = {
+            reply_markup: {
+                inline_keyboard: markers.map((marker, index) => [
+                    {
+                        text: `Удалить маркер ${index + 1} - ${marker.name}`,
+                        callback_data: `delete_marker_${index}`
+                    }
+                ])
+            }
+        };
+
+        // Обновляем клавиатуру в сообщении
+        bot.editMessageReplyMarkup(keyboard, { chat_id: chatId, message_id: callbackQuery.message.message_id });
+
+        // Удаляем маркер с карты и сообщаем клиенту
+        const markerCoordinates = deletedMarker.coords;
+        if (markerCoordinates) {
+            // Отправляем данные для удаления маркера с карты на клиент
+            wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({
+                        action: 'remove_marker',
+                        coordinates: markerCoordinates
+                    }));
+                }
+            });
+        }
+
+        // Обновление всей карты
+        wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({
+                    action: 'update_map',
+                    markers: markers
+                }));
+            }
+        });
+
+    } else {
+        bot.answerCallbackQuery(callbackQuery.id, { text: 'Маркер не найден' });
+    }
+});
+
+/************************************************************************************************************************************* */
+
 
 
 // Функция для извлечения названия населенного пункта
@@ -163,7 +266,6 @@ function extractLink(msg) {
 
     return null;
 }
-
 
 // Функция для получения координат через Nominatim API
 async function getCoordinates(locationName) {

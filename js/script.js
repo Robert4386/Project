@@ -269,7 +269,7 @@ fetch('/data/prdnstr.geojson')
 
 //*********************************************************************************************************************************
 
-// Подключение к WebSocket для получения новых маркеров
+// Подключение к WebSocket для получения данных о маркерах
 const socket = new WebSocket('ws://localhost:8080');
 
 socket.onopen = () => {
@@ -277,19 +277,46 @@ socket.onopen = () => {
 };
 
 socket.onmessage = (event) => {
-    const marker = JSON.parse(event.data);
-    console.log('Received marker data:', marker); // Проверяем данные маркера
+    const data = JSON.parse(event.data);
 
-    // Убедимся, что данные маркера содержат ссылку
-    if (marker.link) {
-        console.log('Marker has link:', marker.link);
+    if (data.action === 'update_map') {
+        updateMap(data.markers);
+    } else if (data.action === 'remove_marker') {
+        removeMarkerFromMap(data.coordinates);
     } else {
-        console.error('Marker does not have link:', marker);
+        // Добавляем маркер на карту, если получены данные маркера
+        console.log('Received marker data:', data);
+        addMarkerToMap(data);
     }
-
-    addMarkerToMap(marker);
 };
 
 socket.onerror = (error) => {
     console.error('WebSocket error:', error);
 };
+
+// Функция для обновления карты с новыми маркерами
+function updateMap(markers) {
+    // Очищаем карту перед обновлением
+    map.eachLayer(function (layer) {
+        if (layer instanceof L.Marker) {
+            map.removeLayer(layer);
+        }
+    });
+
+    // Добавляем маркеры на карту
+    markers.forEach(marker => {
+        L.marker([marker.coords[1], marker.coords[0]])
+            .addTo(map)
+            .bindPopup(`<a href="${marker.link}" target="_blank">Посмотреть пост</a>`);
+    });
+}
+
+// Функция для удаления маркера с карты
+function removeMarkerFromMap(coordinates) {
+    // Найдем маркер по координатам и удалим
+    const markerToRemove = markers.find(marker => marker.coords[0] === coordinates[0] && marker.coords[1] === coordinates[1]);
+    if (markerToRemove) {
+        markers = markers.filter(marker => marker !== markerToRemove);
+        updateMap(markers); // Перерисовываем карту после удаления маркера
+    }
+}
