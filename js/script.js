@@ -29,7 +29,7 @@ myMap.on('click', function (event) {
     let clickedMarker = null;
 
     myMap.forEachFeatureAtPixel(event.pixel, function (feature) {
-        if (feature) {
+        if (feature && feature.get('type') === 'marker') { // Проверяем, что это маркер
             clickedMarker = feature;
         }
     });
@@ -49,8 +49,11 @@ myMap.on('click', function (event) {
         } else {
             console.log('No link found for this marker.');
         }
+    } else {
+        console.log('Clicked area is not a marker.');
     }
 });
+
 
 // Функция для добавления маркера на карту
 const markerSource = new VectorSource(); // Общий источник маркеров
@@ -78,6 +81,9 @@ function addMarkerToMap(markerData) {
 
     // Привязываем ссылку к маркеру через set()
     markerFeature.set('link', link);
+    
+    // Устанавливаем уникальный тег для маркера
+    markerFeature.set('type', 'marker');
 
     // Проверяем, что ссылка привязалась
     console.log('Marker link after set:', markerFeature.get('link'));
@@ -93,6 +99,7 @@ function addMarkerToMap(markerData) {
     markerFeature.setStyle(markerStyle);
     markerSource.addFeature(markerFeature);
 }
+
 
 // *****************************************************************************************************************
 
