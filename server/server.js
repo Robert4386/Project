@@ -77,7 +77,6 @@ bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
 
-    // Получаем текущее состояние пользователя
     const userState = userStates[chatId];
 
     if (!userState) {
@@ -86,51 +85,52 @@ bot.on('message', async (msg) => {
     }
 
     if (userState.state === 'WAITING_FOR_POST') {
-        // Проверяем, что сообщение является пересылкой
         if (!msg.forward_from && !msg.forward_from_chat) {
             bot.sendMessage(chatId, 'Пожалуйста, перешлите пост.');
             return;
         }
 
-        // Извлекаем текст и ссылку из пересланного поста
         userState.postText = msg.text || 'Без текста';
-        userState.postLink = extractLink(msg); // Извлекаем ссылку
-        userState.state = 'WAITING_FOR_LOCATION';
+        userState.postLink = extractLink(msg);  // Извлекаем ссылку на пост
 
-        // Запрашиваем название населенного пункта
+        console.log('Extracted link:', userState.postLink); // Логируем извлеченную ссылку
+
+        if (!userState.postLink) {
+            bot.sendMessage(chatId, 'Не удалось извлечь ссылку на пост. Попробуйте переслать другой пост.');
+            return;
+        }
+
+        userState.state = 'WAITING_FOR_LOCATION';
         bot.sendMessage(chatId, 'Укажите название населенного пункта, связанного с этой новостью.');
     } else if (userState.state === 'WAITING_FOR_LOCATION') {
-        // Извлекаем название населенного пункта
         const locationName = extractLocation(text);
         if (!locationName) {
             bot.sendMessage(chatId, 'Не удалось найти название населенного пункта. Попробуйте снова.');
             return;
         }
 
-        // Получаем координаты
         const coordinates = await getCoordinates(locationName);
         if (!coordinates) {
             bot.sendMessage(chatId, `Не удалось найти координаты для ${locationName}.`);
             return;
         }
 
-        // Добавляем маркер
         const marker = {
             name: locationName,
             coords: coordinates,
             link: userState.postLink, // Добавляем ссылку
         };
 
+        console.log('Marker added with link:', marker);
         markers.push(marker);
         broadcastMarker(wss, marker);
 
-        // Отправляем подтверждение
         bot.sendMessage(chatId, `Маркер успешно добавлен: ${locationName} (${coordinates})`);
 
-        // Сбрасываем состояние пользователя
         delete userStates[chatId];
     }
 });
+
 
 // Функция для извлечения названия населенного пункта
 function extractLocation(text) {
@@ -148,16 +148,22 @@ function extractLocation(text) {
 
 // Функция для извлечения ссылки
 function extractLink(msg) {
-    const entities = msg.entities || [];
-    for (const entity of entities) {
-        if (entity.type === 'url') {
-            const start = entity.offset;
-            const end = start + entity.length;
-            return msg.text.slice(start, end);
-        }
+    if (msg.forward_from_chat && msg.forward_from_chat.username && msg.forward_from_message_id) {
+        const username = msg.forward_from_chat.username; // Получаем username
+        const messageId = msg.forward_from_message_id; // Получаем messageId
+        const link = `https://t.me/${username}/${messageId}`;
+        return link;
+    } else if (msg.forward_from_chat && msg.forward_from_message_id) {
+        // Если username нет, оставляем ссылку с ID
+        const chatId = msg.forward_from_chat.id;
+        const messageId = msg.forward_from_message_id;
+        const link = `https://t.me/${chatId}/${messageId}`;
+        return link;
     }
+
     return null;
 }
+
 
 // Функция для получения координат через Nominatim API
 async function getCoordinates(locationName) {

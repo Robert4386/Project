@@ -24,48 +24,77 @@ const myMap = new Map({
     }),
 });
 
+// Добавляем обработчик клика на карту
+myMap.on('click', function (event) {
+    let clickedMarker = null;
+
+    myMap.forEachFeatureAtPixel(event.pixel, function (feature) {
+        if (feature) {
+            clickedMarker = feature;
+        }
+    });
+
+    if (clickedMarker) {
+        // Получаем свойства маркера
+        const markerProperties = clickedMarker.getProperties();
+        console.log('Marker properties:', markerProperties);
+
+        // Пробуем извлечь ссылку напрямую
+        const featureLink = clickedMarker.get('link');
+        console.log('Clicked marker link:', featureLink);
+
+        if (featureLink) {
+            console.log('Opening link:', featureLink);
+            window.open(featureLink, '_blank');
+        } else {
+            console.log('No link found for this marker.');
+        }
+    }
+});
+
 // Функция для добавления маркера на карту
-function addMarkerToMap(map, markerData) {
+const markerSource = new VectorSource(); // Общий источник маркеров
+const markerLayer = new VectorLayer({
+    source: markerSource,
+    zIndex: 1000,
+});
+myMap.addLayer(markerLayer); // Добавляем один раз
+
+// Функция для добавления маркера на карту
+function addMarkerToMap(markerData) {
     const { coords, name, link } = markerData;
 
+    if (!coords || coords.length !== 2 || isNaN(coords[0]) || isNaN(coords[1])) {
+        console.error('Invalid coordinates for marker:', coords);
+        return;
+    }
+
+    console.log('Adding marker:', markerData);
+
     const markerFeature = new Feature({
-        geometry: new Point(fromLonLat(coords)), // Преобразование координат в проекцию EPSG:3857
+        geometry: new Point(fromLonLat(coords)),
         name: name,
-        link: link, // Сохраняем ссылку в данных маркера
     });
+
+    // Привязываем ссылку к маркеру через set()
+    markerFeature.set('link', link);
+
+    // Проверяем, что ссылка привязалась
+    console.log('Marker link after set:', markerFeature.get('link'));
 
     const markerStyle = new Style({
         image: new Icon({
-            anchor: [0.5, 0.5], // Центр иконки совпадает с точкой координат
-            src: '/images/marker-icon.png', // Путь к иконке маркера
-            scale: 0.15, // Масштаб иконки
+            anchor: [0.5, 0.5],
+            src: '/images/marker-icon.png',
+            scale: 0.15,
         }),
     });
 
     markerFeature.setStyle(markerStyle);
-
-    const vectorSource = new VectorSource();
-    vectorSource.addFeature(markerFeature);
-
-    const vectorLayer = new VectorLayer({
-        source: vectorSource,
-    });
-
-    map.addLayer(vectorLayer);
-
-    // Добавляем обработчик клика на маркер
-    map.on('click', (event) => {
-        map.forEachFeatureAtPixel(event.pixel, (feature) => {
-            const featureLink = feature.get('link'); // Получаем ссылку из данных маркера
-            if (featureLink) {
-                console.log('Opening link:', featureLink); // Логируем ссылку для отладки
-                window.open(featureLink, '_blank'); // Открываем ссылку в новой вкладке
-            }
-        });
-    });
+    markerSource.addFeature(markerFeature);
 }
 
-//*************************************************************************************************************************
+// *****************************************************************************************************************
 
 // Стиль для границ Украины
 const ukraineStyle = new Style({
@@ -215,21 +244,21 @@ fetch('/data/poland.geojson')
     })
     .catch(error => console.error('Error loading zapad borders:', error.message));
 
-    // Загрузка границ польши
+// Загрузка границ приднестровья
 fetch('/data/prdnstr.geojson')
-.then(response => response.json())
-.then(data => {
-    const prdnstrLayer = new VectorLayer({
-        source: new VectorSource({
-            features: new GeoJSON().readFeatures(data, {
-                featureProjection: 'EPSG:3857', // Преобразование координат
+    .then(response => response.json())
+    .then(data => {
+        const prdnstrLayer = new VectorLayer({
+            source: new VectorSource({
+                features: new GeoJSON().readFeatures(data, {
+                    featureProjection: 'EPSG:3857', // Преобразование координат
+                }),
             }),
-        }),
-        style: prdnstrStyle,
-    });
-    myMap.addLayer(prdnstrLayer); // Добавляем слой поверх базового
-})
-.catch(error => console.error('Error loading zapad borders:', error.message));
+            style: prdnstrStyle,
+        });
+        myMap.addLayer(prdnstrLayer); // Добавляем слой поверх базового
+    })
+    .catch(error => console.error('Error loading zapad borders:', error.message));
 
 //*********************************************************************************************************************************
 
@@ -242,7 +271,16 @@ socket.onopen = () => {
 
 socket.onmessage = (event) => {
     const marker = JSON.parse(event.data);
-    addMarkerToMap(myMap, marker);
+    console.log('Received marker data:', marker); // Проверяем данные маркера
+
+    // Убедимся, что данные маркера содержат ссылку
+    if (marker.link) {
+        console.log('Marker has link:', marker.link);
+    } else {
+        console.error('Marker does not have link:', marker);
+    }
+
+    addMarkerToMap(marker);
 };
 
 socket.onerror = (error) => {
